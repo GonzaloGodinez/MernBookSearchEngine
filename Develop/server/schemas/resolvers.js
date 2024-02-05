@@ -5,20 +5,6 @@ const { signToken, AuthenticationError } = require('../utils/auth');
 
 const resolvers = {
   Query: {
-    users: async () => {
-      // return User.find().populate('savedBooks');
-      return User.find().populate('savedBooks');
-    },
-    user: async (parent, { username }) => {
-      return User.findOne({ username }).populate('savedBooks');
-    },
-    savedBooks: async (parent, { username }) => {
-      const params = username ? { username } : {};
-      return Book.find(params).sort({ createdAt: -1 });
-    },
-    book: async (parent, { bookId }) => {
-      return Book.findOne({ _id: bookId });
-    },
     me: async (parent, args, context) => {
       if (context.user) {
         return User.findOne({ _id: context.user._id }).populate('c');
@@ -50,19 +36,15 @@ const resolvers = {
 
       return { token, user };
     },
-    addBook: async (parent, { title }, context) => {
+    saveBook: async (parent, { title, authors, bookId, description, image, link }, context) => {
       if (context.user) {
-        const book = await Book.create({
-          title,
-          authors: context.user.username,
-        });
-
-        await User.findOneAndUpdate(
+       const user = await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $addToSet: { savedBooks: book._id } }
+          { $addToSet: { savedBooks: {title, authors, bookId, description, image, link} } },
+          {new: true}
         );
 
-        return book;
+        return user;
       }
       throw AuthenticationError;
       ('You need to be logged in!');
@@ -70,17 +52,13 @@ const resolvers = {
 
     removeBook: async (parent, { bookId }, context) => {
       if (context.user) {
-        const book = await Book.findOneAndDelete({
-          _id: bookId,
-          authors: context.user.username,
-        });
-
-        await User.findOneAndUpdate(
+        const user = await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $pull: { savedBooks: book._id } }
+          { $pull: { savedBooks: {bookId} } },
+          {new: true}
         );
 
-        return book;
+        return user;
       }
       throw AuthenticationError;
     },
