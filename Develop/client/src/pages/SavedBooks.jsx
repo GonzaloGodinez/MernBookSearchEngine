@@ -7,11 +7,17 @@ import {
   Col
 } from 'react-bootstrap';
 
-import { getMe, deleteBook } from '../utils/API';
+// import { getMe, deleteBook } from '../utils/API';
+// use the useQuery() Hook to execute the GET_ME query on load 
+// and save it to a variable named userData.
 import Auth from '../utils/auth';
+import { useMutation, useQuery } from '@apollo/client';
 import { removeBookId } from '../utils/localStorage';
+import {REMOVE_BOOK } from '../utils/mutations'
 
 const SavedBooks = () => {
+  const { getBook, data } = useQuery(GET_ME)
+  const [removeBook, {error} ] = useMutation(REMOVE_BOOK)
   const [userData, setUserData] = useState({});
 
   // use this to determine if `useEffect()` hook needs to run again
@@ -42,7 +48,28 @@ const SavedBooks = () => {
   //   getUserData();
   // }, [userDataLength]);
 
+  // From here ggl getme routine not a good syntax
+  const getuserData = () => {
+      const { username } = useQuery(getMe ? QUERY_USER : QUERY_ME, {
+      variables: { userData: userQuery },
+    });
+  
+    const user = data?.me || data?.user || {};
+    // navigate to personal profile page if username is yours
+    if (Auth.loggedIn() && Auth.getuserData().data.username === userParam) {
+      return 
+        }
+  
+    if (loading) {
+      return userData
+    }
+  
+    }
+
+  // to here
+
   // create function that accepts the book's mongo _id value as param and deletes the book from the database
+  // Use the useMutation() Hook to execute the REMOVE_BOOK 
   const handleDeleteBook = async (bookId) => {
     const token = Auth.loggedIn() ? Auth.getToken() : null;
 
@@ -51,13 +78,17 @@ const SavedBooks = () => {
     }
 
     try {
-      const response = await deleteBook(bookId, token);
+      // const response = await deleteBook(bookId, token);
+      const {data} = await removeBook ({
+        variables: {...userData}
+      })
+      // if (!response.ok) {
+      //   throw new Error('something went wrong!');
+      // }
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
-
-      const updatedUser = await response.json();
+      // const updatedUser = await response.json();
+      console.log(data.removeBook.token);
+      Auth.removeBook(data.removeBook.token);
       setUserData(updatedUser);
       // upon success, remove book's id from localStorage
       removeBookId(bookId);
