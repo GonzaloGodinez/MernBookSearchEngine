@@ -38,6 +38,10 @@ const resolvers = {
     },
     saveBook: async (parent, { bookData }, context) => {
       if (context.user) {
+        console.log ("passing here")
+        console.log (context.user._id)
+        const user1 = await User.findById({_id: context.user._id} );
+        console.log (user1)
        const user = await User.findByIdAndUpdate(
           { _id: context.user._id },
           { $push: { savedBooks: bookData } },
